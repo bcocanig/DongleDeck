@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="380" viewBox="0 0 1200 380">
+<defs><radialGradient id="wash"><stop stop-color="#0076CE" stop-opacity=".10"/><stop offset="1" stop-color="#F8FAFC" stop-opacity="0"/></radialGradient></defs>
+<rect x="1" y="1" width="1198" height="378" rx="24" fill="#F8FAFC" stroke="#D6E3EF" stroke-width="2"/>
+<ellipse cx="970" cy="190" rx="330" ry="188" fill="url(#wash)"/>
+<g font-family="Segoe UI, Arial, sans-serif">
+<text x="54" y="70" font-size="15" font-weight="600" letter-spacing="2.5" fill="#0076CE">THE WIRELESS RECEIVER WORKBENCH</text>
+<text x="50" y="151" font-size="64" font-weight="750" fill="#0F172A">Dongle<tspan fill="#0076CE">Deck</tspan></text>
+<text x="54" y="204" font-size="24" fill="#475569">Pair and manage Dell keyboards and mice.</text>
+<text x="54" y="241" font-size="20" fill="#475569">Portable Windows app. No Dell software required.</text>
+<rect x="54" y="279" width="109" height="34" rx="6" fill="#D6E3EF"/>
+<text x="108" y="302" text-anchor="middle" font-size="16" fill="#0F172A">v0.4.0</text>
+<rect x="175" y="279" width="152" height="34" rx="6" fill="#D6E3EF"/>
+<text x="251" y="302" text-anchor="middle" font-size="16" fill="#0F172A">Windows x64</text>
+<rect x="339" y="279" width="132" height="34" rx="6" fill="#D6E3EF"/>
+<text x="405" y="302" text-anchor="middle" font-size="16" fill="#0F172A">MIT license</text>
+</g><svg x="850" y="42" width="288" height="288" viewBox="0 0 400 400">
+                <defs>
+                  <linearGradient id="bracketLight" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#0284C7"/>
+                    <stop offset="100%" stop-color="#005B94"/>
+                  </linearGradient>
+                  <linearGradient id="bodyLight" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#FFFFFF"/>
+                    <stop offset="100%" stop-color="#F1F5F9"/>
+                  </linearGradient>
+                  <linearGradient id="stemLight" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#94A3B8"/>
+                    <stop offset="50%" stop-color="#CBD5E1"/>
+                    <stop offset="100%" stop-color="#64748B"/>
+                  </linearGradient>
+                  <filter id="lightShadow" x="-10%" y="-10%" width="120%" height="120%">
+                    <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#0076CE" flood-opacity="0.18"/>
+                  </filter>
+                </defs>
+
+                
+                <rect width="400" height="400" rx="36" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="2.5"/>
+
+                
+                <circle cx="48" cy="42" r="4.5" fill="#EF4444" opacity="0.9"/>
+                <circle cx="64" cy="42" r="4.5" fill="#F59E0B" opacity="0.9"/>
+                <circle cx="80" cy="42" r="4.5" fill="#10B981" opacity="0.9"/>
+                <text x="110" y="46" font-family="'Fira Code', monospace" font-size="11" fill="#64748B" font-weight="600">&lt;dongledeck /&gt;</text>
+
+                
+                <path d="M 86 195 L 42 225 L 86 255" fill="none" stroke="url(#bracketLight)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+
+                
+                <path d="M 314 195 L 358 225 L 314 255" fill="none" stroke="url(#bracketLight)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+
+                
+                <path d="M 115 170 A 70 70 0 0 0 115 280" fill="none" stroke="#0284C7" stroke-width="4" stroke-linecap="round" stroke-dasharray="1 8" opacity="0.5"/>
+
+                
+                <path d="M 285 170 A 70 70 0 0 1 285 280" fill="none" stroke="#0284C7" stroke-width="4" stroke-linecap="round" stroke-dasharray="1 8" opacity="0.5"/>
+
+                
+                
+                <g transform="translate(200, 115)">
+                  
+                  <rect x="-24" y="-36" width="48" height="42" rx="4" fill="url(#stemLight)" stroke="#64748B" stroke-width="1.5"/>
+                  
+                  <rect x="-14" y="-26" width="8" height="14" rx="2" fill="#334155"/>
+                  <rect x="6" y="-26" width="8" height="14" rx="2" fill="#334155"/>
+                  
+                  <rect x="-12" y="-22" width="4" height="6" fill="#D97706"/>
+                  <rect x="8" y="-22" width="4" height="6" fill="#D97706"/>
+                  
+                  <rect x="-28" y="2" width="56" height="8" rx="2" fill="#CBD5E1"/>
+                </g>
+
+                
+                <rect x="146" y="125" width="108" height="152" rx="24" fill="url(#bodyLight)" stroke="#0076CE" stroke-width="5" filter="url(#lightShadow)"/>
+                
+                
+                <rect x="156" y="135" width="88" height="132" rx="18" fill="none" stroke="#38BDF8" stroke-width="1.5" opacity="0.8"/>
+
+                
+                <g transform="translate(200, 200)">
+                  
+                  <path d="M -22 0 C -22 -14, -4 -14, 0 0 C 4 14, 22 14, 22 0" fill="none" stroke="#0F172A" stroke-width="6.5" stroke-linecap="round"/>
+                  <circle cx="-22" cy="0" r="5.5" fill="#0076CE"/>
+                  <circle cx="22" cy="0" r="5.5" fill="#0076CE"/>
+                  <circle cx="0" cy="0" r="3.5" fill="#0284C7"/>
+                </g>
+
+                
+                <circle cx="200" cy="245" r="4" fill="#0284C7"/>
+
+                
+                <text x="200" y="340" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-weight="900" font-size="20" letter-spacing="4" fill="#0F172A">DONGLE<tspan fill="#0076CE">DECK</tspan></text>
+                <text x="200" y="365" text-anchor="middle" font-family="'Fira Code', monospace" font-size="10.5" letter-spacing="2" fill="#64748B">&lt; DELL_UNIVERSAL_RF /&gt;</text>
+              </svg></svg>

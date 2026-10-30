@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="380" viewBox="0 0 1200 380">
+<defs><radialGradient id="wash"><stop stop-color="#00F0FF" stop-opacity=".10"/><stop offset="1" stop-color="#070C18" stop-opacity="0"/></radialGradient></defs>
+<rect x="1" y="1" width="1198" height="378" rx="24" fill="#070C18" stroke="#1E293B" stroke-width="2"/>
+<ellipse cx="970" cy="190" rx="330" ry="188" fill="url(#wash)"/>
+<g font-family="Segoe UI, Arial, sans-serif">
+<text x="54" y="70" font-size="15" font-weight="600" letter-spacing="2.5" fill="#00F0FF">THE WIRELESS RECEIVER WORKBENCH</text>
+<text x="50" y="151" font-size="64" font-weight="750" fill="#F1F5F9">Dongle<tspan fill="#00F0FF">Deck</tspan></text>
+<text x="54" y="204" font-size="24" fill="#A5B4C8">Pair and manage Dell keyboards and mice.</text>
+<text x="54" y="241" font-size="20" fill="#A5B4C8">Portable Windows app. No Dell software required.</text>
+<rect x="54" y="279" width="109" height="34" rx="6" fill="#1E293B"/>
+<text x="108" y="302" text-anchor="middle" font-size="16" fill="#F1F5F9">v0.4.0</text>
+<rect x="175" y="279" width="152" height="34" rx="6" fill="#1E293B"/>
+<text x="251" y="302" text-anchor="middle" font-size="16" fill="#F1F5F9">Windows x64</text>
+<rect x="339" y="279" width="132" height="34" rx="6" fill="#1E293B"/>
+<text x="405" y="302" text-anchor="middle" font-size="16" fill="#F1F5F9">MIT license</text>
+</g><svg x="850" y="42" width="288" height="288" viewBox="0 0 300 300">
+              <defs>
+                <linearGradient id="bHero" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#00F0FF"/>
+                  <stop offset="100%" stop-color="#0284C7"/>
+                </linearGradient>
+              </defs>
+              <rect width="300" height="300" rx="30" fill="#0C1425" stroke="#1E293B" stroke-width="2"/>
+              <path d="M 60 145 L 30 165 L 60 185" fill="none" stroke="url(#bHero)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M 240 145 L 270 165 L 240 185" fill="none" stroke="url(#bHero)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+              
+              <g transform="translate(150, 90)">
+                <rect x="-18" y="-28" width="36" height="32" rx="3" fill="#94A3B8" stroke="#E2E8F0" stroke-width="1.2"/>
+                <rect x="-10" y="-20" width="6" height="10" rx="1.5" fill="#0F172A"/>
+                <rect x="4" y="-20" width="6" height="10" rx="1.5" fill="#0F172A"/>
+                <rect x="-9" y="-17" width="4" height="4" fill="#F59E0B"/>
+                <rect x="5" y="-17" width="4" height="4" fill="#F59E0B"/>
+              </g>
+              <rect x="110" y="98" width="80" height="116" rx="18" fill="#070C16" stroke="#00F0FF" stroke-width="4"/>
+              
+              <g transform="translate(150, 154)">
+                <path d="M -16 0 C -16 -10, -3 -10, 0 0 C 3 10, 16 10, 16 0" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
+                <circle cx="-16" cy="0" r="4" fill="#00F0FF"/>
+                <circle cx="16" cy="0" r="4" fill="#00F0FF"/>
+              </g>
+              <circle cx="150" cy="188" r="3.5" fill="#00F0FF"/>
+              <text x="150" y="250" text-anchor="middle" font-family="'Plus Jakarta Sans', sans-serif" font-weight="900" font-size="16" letter-spacing="3" fill="#FFFFFF">DONGLE<tspan fill="#00F0FF">DECK</tspan></text>
+            </svg></svg>

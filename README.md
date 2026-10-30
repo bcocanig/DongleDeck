@@ -8,7 +8,7 @@
 
 **Pair Dell keyboards and mice, clear old pairings, and get the next combo ready.**
 
-[![Build and test](https://github.com/bcocanig/DongleDeck/actions/workflows/build.yml/badge.svg)](https://github.com/bcocanig/DongleDeck/actions/workflows/build.yml)
+[![Build and test](https://github.com/bcocanig/DongleDeck/actions/workflows/build.yml/badge.svg?branch=main&event=push)](https://github.com/bcocanig/DongleDeck/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-0076CE)](LICENSE)
 
 **[Download for Windows](https://github.com/bcocanig/DongleDeck/releases/latest)** · [Supported hardware](#supported-hardware) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [30 feature ideas](docs/ROADMAP.md)

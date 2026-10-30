@@ -2,18 +2,7 @@
 <defs><radialGradient id="wash"><stop stop-color="#0076CE" stop-opacity=".10"/><stop offset="1" stop-color="#F8FAFC" stop-opacity="0"/></radialGradient></defs>
 <rect x="1" y="1" width="1198" height="378" rx="24" fill="#F8FAFC" stroke="#D6E3EF" stroke-width="2"/>
 <ellipse cx="970" cy="190" rx="330" ry="188" fill="url(#wash)"/>
-<g font-family="Segoe UI, Arial, sans-serif">
-<text x="54" y="70" font-size="15" font-weight="600" letter-spacing="2.5" fill="#0076CE">THE WIRELESS RECEIVER WORKBENCH</text>
-<text x="50" y="151" font-size="64" font-weight="750" fill="#0F172A">Dongle<tspan fill="#0076CE">Deck</tspan></text>
-<text x="54" y="204" font-size="24" fill="#475569">Pair and manage Dell keyboards and mice.</text>
-<text x="54" y="241" font-size="20" fill="#475569">Portable Windows app. No Dell software required.</text>
-<rect x="54" y="279" width="109" height="34" rx="6" fill="#D6E3EF"/>
-<text x="108" y="302" text-anchor="middle" font-size="16" fill="#0F172A">v0.4.0</text>
-<rect x="175" y="279" width="152" height="34" rx="6" fill="#D6E3EF"/>
-<text x="251" y="302" text-anchor="middle" font-size="16" fill="#0F172A">Windows x64</text>
-<rect x="339" y="279" width="132" height="34" rx="6" fill="#D6E3EF"/>
-<text x="405" y="302" text-anchor="middle" font-size="16" fill="#0F172A">MIT license</text>
-</g><svg x="850" y="42" width="288" height="288" viewBox="0 0 400 400">
+<g font-family="Segoe UI, Arial, sans-serif"><text x="50" y="151" font-size="64" font-weight="750" fill="#0F172A">Dongle<tspan fill="#0076CE">Deck</tspan></text><text x="54" y="204" font-size="24" fill="#475569">Wireless keyboard and mouse pairing.</text></g><svg x="850" y="42" width="288" height="288" viewBox="0 0 400 400">
                 <defs>
                   <linearGradient id="bracketLight" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stop-color="#0284C7"/>

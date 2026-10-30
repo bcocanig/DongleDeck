@@ -19,7 +19,7 @@
   <Grid Margin='0,0,0,22'>
    <Grid.ColumnDefinitions><ColumnDefinition Width='Auto'/><ColumnDefinition Width='*'/><ColumnDefinition Width='Auto'/></Grid.ColumnDefinitions>
    <Image x:Name='LogoImage' Width='52' Height='52' Margin='0,0,14,0' RenderOptions.BitmapScalingMode='HighQuality'/>
-   <StackPanel Grid.Column='1'><StackPanel Orientation='Horizontal'><TextBlock Text='DongleDeck' FontSize='25' FontWeight='SemiBold'/><Border Background='{DynamicResource Subtle}' CornerRadius='5' Padding='7,3' Margin='10,7,0,0' VerticalAlignment='Top'><TextBlock Text='v0.4' Foreground='{DynamicResource Muted}' FontSize='10'/></Border></StackPanel><TextBlock Text='Pair and manage Dell keyboards and mice.' Foreground='{DynamicResource Muted}' FontSize='13' Margin='0,3,0,0'/></StackPanel>
+   <StackPanel Grid.Column='1'><StackPanel Orientation='Horizontal'><TextBlock Text='DongleDeck' FontSize='25' FontWeight='SemiBold'/><Border Background='{DynamicResource Subtle}' CornerRadius='5' Padding='7,3' Margin='10,7,0,0' VerticalAlignment='Top'><TextBlock Text='v0.5' Foreground='{DynamicResource Muted}' FontSize='10'/></Border></StackPanel><TextBlock Text='Dell Universal · Logitech Unifying' Foreground='{DynamicResource Muted}' FontSize='13' Margin='0,3,0,0'/></StackPanel>
    <Button x:Name='ThemeButton' Grid.Column='2' Content='Light mode' Padding='12,8' VerticalAlignment='Top' Margin='12,4,0,0' ToolTip='Switch between dark and light mode'/>
   </Grid>
   <Border Grid.Row='1' Background='{DynamicResource Card}' BorderBrush='{DynamicResource Border}' BorderThickness='1' CornerRadius='12' Padding='22,18' Margin='0,0,0,18'>

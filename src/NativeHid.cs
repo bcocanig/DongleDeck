@@ -10,13 +10,17 @@ using Microsoft.Win32.SafeHandles;
 namespace DongleDeck {
     public sealed class ReceiverInfo {
         public string Key, ManagementPath, InputPath, UsbId, Revision, Label, PhysicalDeviceId;
+        public bool IsLogitech;
+        public string LongInputPath;
+        public int InputBytes=32,LongInputBytes,OutputBytes=32;
         public override string ToString() { return Label; }
     }
     internal sealed class HidCollection {
         internal string Path, Key, UsbId, Revision;
-        internal ushort Page, Usage, InputBytes, FeatureBytes;
+        internal ushort Page, Usage, InputBytes, OutputBytes, FeatureBytes;
         internal List<int> FeatureIds = new List<int>();
         internal List<int> InputIds = new List<int>();
+        internal List<int> OutputIds = new List<int>();
     }
     internal static class NativeHid {
         [StructLayout(LayoutKind.Sequential)] struct InterfaceData { public int Size; public Guid Guid; public int Flags; public IntPtr Reserved; }
@@ -27,6 +31,8 @@ namespace DongleDeck {
             public ushort LinkNodes, InputButtons, InputValues, InputIndices, OutputButtons, OutputValues, OutputIndices, FeatureButtons, FeatureValues, FeatureIndices;
         }
         [DllImport("hid.dll")] static extern void HidD_GetHidGuid(out Guid guid);
+        internal static Guid ClassGuid {get {Guid guid;HidD_GetHidGuid(out guid);return guid;}}
+        internal static bool SupportedPath(string path) {return path.IndexOf("vid_413c&pid_301c",StringComparison.OrdinalIgnoreCase)>=0 || path.IndexOf("vid_046d&pid_c52b",StringComparison.OrdinalIgnoreCase)>=0;}
         [DllImport("setupapi.dll",SetLastError=true)] static extern IntPtr SetupDiGetClassDevsW(ref Guid guid,IntPtr enumerator,IntPtr parent,uint flags);
         [DllImport("setupapi.dll",SetLastError=true)] static extern bool SetupDiEnumDeviceInterfaces(IntPtr set,IntPtr data,ref Guid guid,uint index,ref InterfaceData detail);
         [DllImport("setupapi.dll",SetLastError=true)] static extern bool SetupDiGetDeviceInterfaceDetailW(IntPtr set,ref InterfaceData data,IntPtr detail,uint length,out uint needed,IntPtr device);
@@ -51,7 +57,7 @@ namespace DongleDeck {
                 var buffer=new System.Text.StringBuilder(512);
                 if(CM_Get_Device_IDW(node,buffer,512,0)!=0) return null;
                 string id=buffer.ToString().ToUpperInvariant();
-                if(id.StartsWith("USB\\VID_413C&PID_301C\\",StringComparison.Ordinal)) return id;
+                if(id.StartsWith("USB\\VID_413C&PID_301C\\",StringComparison.Ordinal) || id.StartsWith("USB\\VID_046D&PID_C52B\\",StringComparison.Ordinal)) return id;
                 uint parent;if(CM_Get_Parent(out parent,node,0)!=0) return null;node=parent;
             }
             return null;
@@ -74,6 +80,22 @@ namespace DongleDeck {
             if(parts.Length<3) throw new InvalidOperationException("Unrecognized HID device path.");
             return Regex.Replace(parts[1],"&col[0-9]+$","")+"#"+Regex.Replace(parts[2],"&[0-9a-f]{4}$","");
         }
+        internal static bool DellPresent() {
+            Guid guid=ClassGuid;IntPtr set=SetupDiGetClassDevsW(ref guid,IntPtr.Zero,IntPtr.Zero,0x12);
+            if(set==new IntPtr(-1)) throw new Win32Exception();
+            try {
+                for(uint index=0;;index++) {
+                    var info=new InterfaceData {Size=Marshal.SizeOf(typeof(InterfaceData))};
+                    if(!SetupDiEnumDeviceInterfaces(set,IntPtr.Zero,ref guid,index,ref info)) return false;
+                    uint size;SetupDiGetDeviceInterfaceDetailW(set,ref info,IntPtr.Zero,0,out size,IntPtr.Zero);
+                    IntPtr buffer=Marshal.AllocHGlobal((int)size);
+                    try {
+                        Marshal.WriteInt32(buffer,IntPtr.Size==8?8:6);
+                        if(SetupDiGetDeviceInterfaceDetailW(set,ref info,buffer,size,out size,IntPtr.Zero) && Marshal.PtrToStringUni(IntPtr.Add(buffer,4)).IndexOf("vid_413c&pid_301c",StringComparison.OrdinalIgnoreCase)>=0) return true;
+                    } finally {Marshal.FreeHGlobal(buffer);}
+                }
+            } finally {SetupDiDestroyDeviceInfoList(set);}
+        }
         public static List<ReceiverInfo> Enumerate() {
             var collections=new List<HidCollection>(); Guid guid; HidD_GetHidGuid(out guid);
             IntPtr set=SetupDiGetClassDevsW(ref guid,IntPtr.Zero,IntPtr.Zero,0x12);
@@ -88,17 +110,16 @@ namespace DongleDeck {
                         Marshal.WriteInt32(buffer,IntPtr.Size==8?8:6);
                         if(!SetupDiGetDeviceInterfaceDetailW(set,ref info,buffer,needed,out needed,IntPtr.Zero)) continue;
                         string path=Marshal.PtrToStringUni(IntPtr.Add(buffer,4));
-                        // This release targets only the receiver family physically tested here.
-                        if(path.IndexOf("vid_413c&pid_301c&mi_02",StringComparison.OrdinalIgnoreCase)<0) continue;
+                        if(!SupportedPath(path)) continue;
                         using(var handle=CreateFileW(path,0,3,IntPtr.Zero,3,0,IntPtr.Zero)) {
                             if(handle.IsInvalid) continue;
                             var a=new Attributes {Size=Marshal.SizeOf(typeof(Attributes))};
-                            if(!HidD_GetAttributes(handle,ref a) || a.Vendor!=0x413c || a.Product!=0x301c) continue;
+                            if(!HidD_GetAttributes(handle,ref a) || !((a.Vendor==0x413c && a.Product==0x301c) || (a.Vendor==0x046d && a.Product==0xc52b))) continue;
                             IntPtr data;
                             if(!HidD_GetPreparsedData(handle,out data)) continue;
                             try {
                                 Caps caps; if(HidP_GetCaps(data,out caps)<0) continue;
-                                collections.Add(new HidCollection {Path=path,Key=PhysicalKey(path),UsbId=a.Vendor.ToString("X4")+":"+a.Product.ToString("X4"),Revision=a.Version.ToString("X4"),Page=caps.Page,Usage=caps.Usage,InputBytes=caps.InputBytes,FeatureBytes=caps.FeatureBytes,FeatureIds=ReportIds(data,2,caps.FeatureValues,caps.FeatureButtons),InputIds=ReportIds(data,0,caps.InputValues,caps.InputButtons)});
+                                collections.Add(new HidCollection {Path=path,Key=PhysicalKey(path),UsbId=a.Vendor.ToString("X4")+":"+a.Product.ToString("X4"),Revision=a.Version.ToString("X4"),Page=caps.Page,Usage=caps.Usage,InputBytes=caps.InputBytes,OutputBytes=caps.OutputBytes,FeatureBytes=caps.FeatureBytes,FeatureIds=ReportIds(data,2,caps.FeatureValues,caps.FeatureButtons),InputIds=ReportIds(data,0,caps.InputValues,caps.InputButtons),OutputIds=ReportIds(data,1,caps.OutputValues,caps.OutputButtons)});
                             } finally {HidD_FreePreparsedData(data);}
                         }
                     } finally {Marshal.FreeHGlobal(buffer);}
@@ -106,6 +127,14 @@ namespace DongleDeck {
             } finally {SetupDiDestroyDeviceInfoList(set);}
             var result=new List<ReceiverInfo>();
             foreach(var group in collections.GroupBy(c=>c.Key).OrderBy(g=>g.Key)) {
+                if(group.First().UsbId=="046D:C52B") {
+                    var shortReports=group.Where(c=>c.Page==0xff00 && c.InputIds.Contains(0x10) && c.OutputIds.Contains(0x10) && c.InputBytes>=7 && c.OutputBytes>=7).ToList();
+                    var longReports=group.Where(c=>c.Page==0xff00 && c.InputIds.Contains(0x11) && c.InputBytes>=20).ToList();
+                    if(shortReports.Count!=1 || longReports.Count!=1) continue;
+                    var s=shortReports[0];var l=longReports[0];
+                    result.Add(new ReceiverInfo {Key=s.Key,IsLogitech=true,ManagementPath=s.Path,InputPath=s.Path,LongInputPath=l.Path,InputBytes=s.InputBytes,LongInputBytes=l.InputBytes,OutputBytes=s.OutputBytes,UsbId=s.UsbId,Revision=s.Revision,Label="Logitech Unifying Receiver "+(result.Count+1),PhysicalDeviceId=PhysicalUsbId(s.Path)});
+                    continue;
+                }
                 var management=group.Where(c=>c.Page==0xff01 && c.Usage==1 && c.FeatureBytes==32 && c.FeatureIds.SequenceEqual(new[]{8})).ToList();
                 var input=group.Where(c=>c.Page==0xff00 && c.Usage==0 && c.InputBytes==32 && c.InputIds.SequenceEqual(new[]{1})).ToList();
                 if(management.Count!=1 || input.Count!=1) continue;

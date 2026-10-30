@@ -31,10 +31,13 @@ namespace DongleDeck {
         readonly ObservableCollection<Candidate> candidates=new ObservableCollection<Candidate>();
         readonly Dictionary<string,DeviceSlot> telemetry=new Dictionary<string,DeviceSlot>();
         readonly DispatcherTimer activityTimer=new DispatcherTimer();
+        readonly DispatcherTimer hotplugTimer=new DispatcherTimer();
         List<ReceiverSnapshot> snapshots=new List<ReceiverSnapshot>();
         ReceiverSnapshot current;
         ReceiverWatcher watcher;
         RawActivityMonitor rawActivity;
+        DeviceChangeMonitor hotplug;
+        bool topologyPending,checkingTopology;
         bool busy,updating,finishing,closeAfter,listening,scanAnimated;
         CancellationTokenSource cancellation;
         PairingSession pairing;
@@ -67,10 +70,11 @@ namespace DongleDeck {
                 var button=FindButton(e.OriginalSource as DependencyObject);
                 if(button!=null && button.Tag is Candidate && pairing!=null) {var candidate=(Candidate)button.Tag;if(!candidate.AlreadyPaired && !finishing) {finishing=true;candidateList.IsEnabled=false;pairing.Select(candidate);searchStatus.Text="Pairing "+candidate.Model+"…";SetPhase(searchStatus.Text);countdown.Text="";}e.Handled=true;}
             }));
-            window.SourceInitialized+=delegate {rawActivity=new RawActivityMonitor(window,OnInput);};
+            window.SourceInitialized+=delegate {rawActivity=new RawActivityMonitor(window,OnInput);hotplug=new DeviceChangeMonitor(window,OnHardwareChanged);};
             window.Loaded+=async delegate {await Refresh();};
             window.Closing+=delegate(object sender,CancelEventArgs e) {if(busy) {e.Cancel=true;closeAfter=true;if(cancellation!=null) cancellation.Cancel();bottom.Text="Finishing receiver operation before closing…";}};
-            window.Closed+=delegate {activityTimer.Stop();StopWatcher();if(rawActivity!=null) rawActivity.Dispose();};
+            window.Closed+=delegate {activityTimer.Stop();hotplugTimer.Stop();StopWatcher();if(hotplug!=null) hotplug.Dispose();if(rawActivity!=null) rawActivity.Dispose();};
+            hotplugTimer.Interval=TimeSpan.FromMilliseconds(650);hotplugTimer.Tick+=async delegate {hotplugTimer.Stop();await CheckTopology();};
             activityTimer.Interval=TimeSpan.FromMilliseconds(250);activityTimer.Tick+=delegate {foreach(var row in rows) row.NotifyTelemetry();if(busy) bottom.Text=operationPhase+"  ·  "+(int)(DateTime.UtcNow-phaseStarted).TotalSeconds+"s";};activityTimer.Start();
         }
         T Find<T>(string name) where T:class {return (T)window.FindName(name);}
@@ -84,7 +88,18 @@ namespace DongleDeck {
             foreach(var row in rows) row.NotifyTelemetry();
         }
         void SetPhase(string status) {if(operationPhase!=status) {operationPhase=status;phaseStarted=DateTime.UtcNow;}bottom.Text=status;}
-        void SetBusy(bool value,string status) {busy=value;SetPhase(status);operationProgress.Visibility=value?Visibility.Visible:Visibility.Collapsed;operationProgress.IsIndeterminate=value;RenderControls();if(!value && closeAfter) window.Close();}
+        void SetBusy(bool value,string status) {busy=value;SetPhase(status);operationProgress.Visibility=value?Visibility.Visible:Visibility.Collapsed;operationProgress.IsIndeterminate=value;RenderControls();if(!value && closeAfter) window.Close();else if(!value && topologyPending) {hotplugTimer.Stop();hotplugTimer.Start();}}
+        void OnHardwareChanged(string path,bool arrived) {
+            topologyPending=true;
+            if(!arrived && current!=null && string.Equals(path,current.Receiver.ManagementPath,StringComparison.OrdinalIgnoreCase)) {StopWatcher();if(cancellation!=null) cancellation.Cancel();}
+            hotplugTimer.Stop();hotplugTimer.Start();
+        }
+        async Task CheckTopology() {
+            if(busy || checkingTopology || closeAfter) return;
+            topologyPending=false;checkingTopology=true;
+            try {await Refresh();} catch(Exception ex) {AppLog.Raw("Receiver detection: "+ex.Message);}
+            finally {checkingTopology=false;if(topologyPending && !busy && !closeAfter) hotplugTimer.Start();}
+        }
         void RenderControls() {
             refresh.IsEnabled=!busy;receiverBox.IsEnabled=!busy;
             bool available=current!=null && !busy;
@@ -103,11 +118,14 @@ namespace DongleDeck {
                 }
             }
             clear.IsEnabled=available && current.Slots.Count>0;deviceList.IsEnabled=!busy;
+            bool logitech=current!=null && current.Receiver.IsLogitech;
+            automatic.Visibility=logitech?Visibility.Collapsed:Visibility.Visible;
+            if(logitech) automatic.IsChecked=true;
         }
         void Render() {
             rows.Clear();if(current!=null) foreach(var slot in current.Slots.OrderBy(s=>s.Number)) rows.Add(slot);
             emptyPanel.Visibility=rows.Count>0?Visibility.Collapsed:Visibility.Visible;
-            meta.Text=current==null?"Supports Dell Universal receiver 413C:301C · Refresh after plugging in.":"USB "+current.Receiver.UsbId+"  ·  Revision "+current.Receiver.Revision;
+            meta.Text=current==null?"Plug in a Dell Universal or Logitech Unifying receiver.":"USB "+current.Receiver.UsbId+"  ·  Revision "+current.Receiver.Revision;
             capacity.Text=current==null?"":current.Slots.Count+" of 6 slots used";RenderControls();
         }
         void Notice(string message,bool error) {
@@ -117,11 +135,11 @@ namespace DongleDeck {
         void UpdateAutomatic() {
             if(pairing!=null) pairing.Automatic=automatic.IsChecked==true;
             candidateList.Visibility=automatic.IsChecked==true?Visibility.Collapsed:Visibility.Visible;
-            instructions.Text="Blue receiver channel → power off → hold a key/button → power on.\n"+(automatic.IsChecked==true?"Devices pair automatically.":"Choose a device below.");
+            instructions.Text=(current!=null && current.Receiver.IsLogitech?"Power the keyboard or mouse off, then on near the receiver.":"Blue receiver channel → power off → hold a key/button → power on.")+"\n"+(automatic.IsChecked==true?"Devices pair automatically.":"Choose a device below.");
         }
         async Task Refresh() {
             if(busy) return;string key=current==null?null:current.Receiver.Key;SetBusy(true,"Reading receiver…");StopWatcher();
-            try {await Reload(key);Notice(current==null?"No supported receiver found. Plug in a Dell Universal dongle and click Refresh.":"Ready.",false);}
+            try {await Reload(key);Notice(current==null?"No supported receiver found.":"Ready.",false);}
             catch(Exception ex) {Notice(ex.Message,true);} finally {SetBusy(false,"Ready");StartWatcher();}
         }
         async Task Reload(string key) {
@@ -200,10 +218,11 @@ namespace DongleDeck {
     }
     public static class Program {
         [STAThread] public static int Main(string[] args) {
+            AppContext.SetSwitch("Switch.System.Windows.DoNotScaleForDpiChanges",false);
             bool created;using(var mutex=new Mutex(true,"Local\\DongleDeck.Utility",out created)) {
                 if(!created) {MessageBox.Show("DongleDeck is already open.");return 1;}
                 if(!new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator)) {MessageBox.Show("Run DongleDeck as administrator so it can manage the Dell service.");return 1;}
-                AppLog.Raw("DongleDeck 0.4.0 started");
+                AppLog.Raw("DongleDeck 0.5.0 started");
                 var app=new Application();app.DispatcherUnhandledException+=delegate(object sender,DispatcherUnhandledExceptionEventArgs e) {AppLog.Raw(e.Exception.ToString());MessageBox.Show(e.Exception.Message,"DongleDeck");e.Handled=true;};
                 new MainWindow().Show();return app.Run();
             }

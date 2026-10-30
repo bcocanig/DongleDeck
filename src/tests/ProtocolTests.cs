@@ -65,6 +65,7 @@ namespace DongleDeck {
             Test("Seen counter starts at two seconds",delegate {var now=DateTime.UtcNow;var slot=new DeviceSlot {LastSeenUtc=now.AddSeconds(-2),LastInputUtc=now.AddSeconds(-2),ReportedOnline=true};Check(slot.ActivityAt(now)=="Seen 2s ago","Seen counter delayed");});
             Test("Idle status retains the exact seconds seen",delegate {var now=DateTime.UtcNow;var slot=new DeviceSlot {LastSeenUtc=now.AddSeconds(-7),LastInputUtc=now.AddSeconds(-7),ReportedOnline=true};Check(slot.ActivityAt(now)=="Seen 7s ago","Seen seconds incorrect");});
             Test("Disconnected device is labelled Inactive",delegate {var now=DateTime.UtcNow;var slot=new DeviceSlot {LastSeenUtc=now,LastInputUtc=now,ReportedOnline=false};Check(slot.ActivityAt(now)=="Inactive","Inactive label incorrect");});
+            LogitechTests.Run(Test);
             Console.WriteLine(passed+" protocol checks passed.");return 0;
         }
     }

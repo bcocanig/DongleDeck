@@ -11,6 +11,12 @@ using System.Threading.Tasks;
 namespace DongleDeck {
     public sealed class DeviceSignal {
         public int Slot; public bool? Online; public int? Battery; public DateTime AtUtc;
+        public static DeviceSignal DecodeLogitech(byte[] report) {
+            if(report==null || report.Length<7 || report[0]!=0x10 || report[1]<1 || report[1]>6) return null;
+            if(report[2]==0x40 && report[3]==2) return new DeviceSignal {Slot=report[1],Online=false,AtUtc=DateTime.UtcNow};
+            if(report[2]==0x41 && (report[3]&7)==4) return new DeviceSignal {Slot=report[1],Online=(report[4]&0x40)==0,AtUtc=DateTime.UtcNow};
+            return null;
+        }
         public static DeviceSignal Decode(byte[] report) {
             if(report==null || report.Length!=32 || report[0]!=1 || report[2]<1 || report[2]>6) return null;
             var signal=new DeviceSignal {Slot=report[2],AtUtc=DateTime.UtcNow};
@@ -25,8 +31,9 @@ namespace DongleDeck {
         public byte Kind {get;set;}
         public string Id {get;set;}
         public string Model {get;set;}
-        public string DeviceType {get {return Kind==1?"Keyboard":"Mouse";}}
-        public string Title {get {return "Dell "+DeviceType.ToLowerInvariant();}}
+        public string Brand="Dell";
+        public string DeviceType {get {return Kind==1?"Keyboard":Kind==2?"Mouse":Kind==3?"Numpad":Kind==8?"Trackball":Kind==9?"Touchpad":"Device";}}
+        public string Title {get {return Brand+" "+DeviceType.ToLowerInvariant();}}
         public string Detail {get {return Model+"  ·  Slot "+Number;}}
         public string Identity {get {return Kind+":"+Id+":"+Model;}}
         public byte Capabilities {get;set;}
@@ -171,6 +178,7 @@ namespace DongleDeck {
         public volatile bool Automatic;
         public void Select(Candidate candidate) {lock(gate) {if(selection==null && !candidate.AlreadyPaired) selection=candidate;}}
         public async Task<DeviceSlot> Run(ReceiverInfo receiver,byte kind,IProgress<PairProgress> progress,CancellationToken stop) {
+            if(receiver.IsLogitech) return await LogitechOperations.Pair(receiver,progress,stop).ConfigureAwait(false);
             using(var lease=new ServiceLease()) {
                 var receivers=NativeHid.Enumerate();ReceiverInfo fresh=receivers.SingleOrDefault(r=>r.Key==receiver.Key);
                 if(fresh==null) throw new InvalidOperationException("The selected receiver was unplugged. Refresh the receiver list.");
@@ -245,16 +253,22 @@ namespace DongleDeck {
     }
     public static class ReceiverOperations {
         public static List<ReceiverSnapshot> Scan() {
-            using(var lease=new ServiceLease()) {
-                var result=new List<ReceiverSnapshot>();
-                foreach(var receiver in NativeHid.Enumerate()) using(var link=new HidLink(receiver)) {var slots=ReceiverProtocol.ReadSlots(link);ReceiverProtocol.ReadBatteries(link,slots);result.Add(new ReceiverSnapshot {Receiver=receiver,Slots=slots});}
-                return result;
+            var result=new List<ReceiverSnapshot>();
+            // Check USB paths before opening HID collections: Dell's service can lock even descriptor access.
+            using(var lease=NativeHid.DellPresent()?new ServiceLease():null) {
+                foreach(var receiver in NativeHid.Enumerate()) {
+                    if(receiver.IsLogitech) using(var link=LogitechOperations.OpenFresh(receiver)) result.Add(new ReceiverSnapshot {Receiver=receiver,Slots=LogitechProtocol.ReadSlots(link)});
+                    else using(var link=new HidLink(receiver)) {var slots=ReceiverProtocol.ReadSlots(link);ReceiverProtocol.ReadBatteries(link,slots);result.Add(new ReceiverSnapshot {Receiver=receiver,Slots=slots});}
+                }
             }
+            return result;
         }
         public static List<DeviceSlot> Remove(ReceiverInfo receiver,DeviceSlot slot) {
+            if(receiver.IsLogitech) using(var link=LogitechOperations.OpenFresh(receiver)) return LogitechProtocol.Remove(link,slot);
             using(var lease=new ServiceLease()) using(var link=OpenFresh(receiver)) return ReceiverProtocol.Remove(link,slot);
         }
         public static List<DeviceSlot> Clear(ReceiverInfo receiver,List<DeviceSlot> slots) {
+            if(receiver.IsLogitech) using(var link=LogitechOperations.OpenFresh(receiver)) return LogitechProtocol.Clear(link,slots);
             using(var lease=new ServiceLease()) using(var link=OpenFresh(receiver)) return ReceiverProtocol.Clear(link,slots);
         }
         static HidLink OpenFresh(ReceiverInfo receiver) {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Security.Principal;
 using System.ServiceProcess;
 using System.Text;
 using System.Threading;
@@ -79,6 +80,33 @@ namespace DongleDeck {
             try {lock(Gate) {Directory.CreateDirectory(DirectoryPath);File.AppendAllText(PathName,DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")+" "+text+Environment.NewLine);}} catch(IOException) {} catch(UnauthorizedAccessException) {}
         }
     }
+    public enum DellServiceState {Missing,Stopped,Running,Unknown}
+    public sealed class DellServiceStatus {
+        public DellServiceState State;
+        public bool Administrator;
+        public bool BlocksDell {get {return !Administrator && (State==DellServiceState.Running || State==DellServiceState.Unknown);}}
+        public string Title {get {
+            if(State==DellServiceState.Missing) return "DDPM not found";
+            if(State==DellServiceState.Stopped) return "DDPM found · service stopped";
+            if(State==DellServiceState.Unknown) return "DDPM service status unavailable";
+            return Administrator?"DDPM found · admin mode":"DDPM found · Dell receiver access blocked";
+        }}
+        public string Detail {get {return BlocksDell?"Close DongleDeck, then right-click DongleDeck.exe → Run as administrator to stop the service temporarily.":"";}}
+        public static bool IsAdministrator {get {using(var identity=WindowsIdentity.GetCurrent()) return new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator);}}
+        public static DellServiceStatus Read() {
+            var result=new DellServiceStatus {Administrator=IsAdministrator};
+            try {using(var service=new ServiceController("DPMService")) result.State=service.Status==ServiceControllerStatus.Stopped?DellServiceState.Stopped:DellServiceState.Running;}
+            catch(Exception ex) {
+                var native=ex as Win32Exception ?? ex.InnerException as Win32Exception;
+                result.State=native!=null && native.NativeErrorCode==1060?DellServiceState.Missing:DellServiceState.Unknown;
+                if(result.State==DellServiceState.Unknown) AppLog.Raw("DDPM service check: "+ex.Message);
+            }
+            return result;
+        }
+    }
+    public sealed class DellServiceBlockedException : InvalidOperationException {
+        public DellServiceBlockedException():base("DDPM is running. Close DongleDeck, then right-click DongleDeck.exe → Run as administrator to use Dell receivers.") {}
+    }
     public sealed class ServiceLease : IDisposable {
         readonly ServiceController service; readonly bool restore; bool disposed;
         public ServiceLease() {
@@ -87,13 +115,14 @@ namespace DongleDeck {
                 var status=service.Status;
                 if(status==ServiceControllerStatus.StartPending) {service.WaitForStatus(ServiceControllerStatus.Running,TimeSpan.FromSeconds(15));status=service.Status;}
                 if(status==ServiceControllerStatus.StopPending) {service.WaitForStatus(ServiceControllerStatus.Stopped,TimeSpan.FromSeconds(15));status=service.Status;}
+                if(status!=ServiceControllerStatus.Stopped && !DellServiceStatus.IsAdministrator) throw new DellServiceBlockedException();
                 restore=status==ServiceControllerStatus.Running;
                 if(restore) {service.Stop();service.WaitForStatus(ServiceControllerStatus.Stopped,TimeSpan.FromSeconds(15));AppLog.Raw("Dell peripheral service paused");}
             } catch(Exception ex) {
                 if(ex is InvalidOperationException && ex.InnerException is System.ComponentModel.Win32Exception && ((System.ComponentModel.Win32Exception)ex.InnerException).NativeErrorCode==1060) {service.Dispose();service=null;return;}
                 // A failed stop can still finish afterward, so restore the initial running state.
                 if(restore) try {service.Refresh();if(service.Status==ServiceControllerStatus.StopPending) service.WaitForStatus(ServiceControllerStatus.Stopped,TimeSpan.FromSeconds(15));if(service.Status==ServiceControllerStatus.Stopped) service.Start();} catch(Exception recovery) {AppLog.Raw("Service recovery: "+recovery.Message);}
-                throw;
+                service.Dispose();throw;
             }
         }
         public void Dispose() {
@@ -251,16 +280,25 @@ namespace DongleDeck {
             }
         }
     }
+    public sealed class ReceiverInventory {
+        public DellServiceStatus DellService;
+        public List<ReceiverSnapshot> Receivers=new List<ReceiverSnapshot>();
+    }
     public static class ReceiverOperations {
-        public static List<ReceiverSnapshot> Scan() {
-            var result=new List<ReceiverSnapshot>();
+        public static List<ReceiverSnapshot> Scan() {return Inspect().Receivers;}
+        public static ReceiverInventory Inspect() {
+            var result=new ReceiverInventory {DellService=DellServiceStatus.Read()};ServiceLease lease=null;
             // Check USB paths before opening HID collections: Dell's service can lock even descriptor access.
-            using(var lease=NativeHid.DellPresent()?new ServiceLease():null) {
-                foreach(var receiver in NativeHid.Enumerate()) {
-                    if(receiver.IsLogitech) using(var link=LogitechOperations.OpenFresh(receiver)) result.Add(new ReceiverSnapshot {Receiver=receiver,Slots=LogitechProtocol.ReadSlots(link)});
-                    else using(var link=new HidLink(receiver)) {var slots=ReceiverProtocol.ReadSlots(link);ReceiverProtocol.ReadBatteries(link,slots);result.Add(new ReceiverSnapshot {Receiver=receiver,Slots=slots});}
+            try {
+                if(!result.DellService.BlocksDell && NativeHid.DellPresent()) {
+                    try {lease=new ServiceLease();}
+                    catch(DellServiceBlockedException) {result.DellService=DellServiceStatus.Read();}
                 }
-            }
+                foreach(var receiver in NativeHid.Enumerate().Where(r=>r.IsLogitech || !result.DellService.BlocksDell)) {
+                    if(receiver.IsLogitech) using(var link=LogitechOperations.OpenFresh(receiver)) result.Receivers.Add(new ReceiverSnapshot {Receiver=receiver,Slots=LogitechProtocol.ReadSlots(link)});
+                    else using(var link=new HidLink(receiver)) {var slots=ReceiverProtocol.ReadSlots(link);ReceiverProtocol.ReadBatteries(link,slots);result.Receivers.Add(new ReceiverSnapshot {Receiver=receiver,Slots=slots});}
+                }
+            } finally {if(lease!=null) lease.Dispose();}
             return result;
         }
         public static List<DeviceSlot> Remove(ReceiverInfo receiver,DeviceSlot slot) {

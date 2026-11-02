@@ -5,7 +5,6 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Security.Principal;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -24,6 +23,8 @@ namespace DongleDeck {
         readonly FrameworkElement emptyPanel,pairPanel;
         readonly TextBlock meta,capacity,notice,bottom,instructions,searchStatus,countdown,activity,scanState,pairText,pairGlyph;
         readonly Border noticeBorder;
+        readonly Border ddpmBorder;
+        readonly TextBlock ddpmTitle,ddpmDetail,ddpmGlyph;
         readonly Button refresh,clear,pairButton,themeButton;
         readonly ProgressBar operationProgress;
         readonly CheckBox automatic;
@@ -50,6 +51,7 @@ namespace DongleDeck {
             emptyPanel=Find<FrameworkElement>("EmptyPanel");pairPanel=Find<FrameworkElement>("PairPanel");
             meta=Find<TextBlock>("ReceiverMeta");capacity=Find<TextBlock>("CapacityText");notice=Find<TextBlock>("NoticeText");bottom=Find<TextBlock>("BottomStatus");
             instructions=Find<TextBlock>("PairInstructions");searchStatus=Find<TextBlock>("SearchStatus");countdown=Find<TextBlock>("CountdownText");activity=Find<TextBlock>("ActivityText");noticeBorder=Find<Border>("NoticeBorder");
+            ddpmBorder=Find<Border>("DdpmStatusBorder");ddpmTitle=Find<TextBlock>("DdpmStatusTitle");ddpmDetail=Find<TextBlock>("DdpmStatusDetail");ddpmGlyph=Find<TextBlock>("DdpmStatusGlyph");
             refresh=Find<Button>("RefreshButton");clear=Find<Button>("ClearButton");pairButton=Find<Button>("PairButton");automatic=Find<CheckBox>("AutoPairCheck");
             operationProgress=Find<ProgressBar>("OperationProgress");
             scanState=Find<TextBlock>("ScanStateText");pairText=Find<TextBlock>("PairButtonText");pairGlyph=Find<TextBlock>("PairButtonGlyph");themeButton=Find<Button>("ThemeButton");
@@ -137,13 +139,21 @@ namespace DongleDeck {
             candidateList.Visibility=automatic.IsChecked==true?Visibility.Collapsed:Visibility.Visible;
             instructions.Text=(current!=null && current.Receiver.IsLogitech?"Power the keyboard or mouse off, then on near the receiver.":"Blue receiver channel → power off → hold a key/button → power on.")+"\n"+(automatic.IsChecked==true?"Devices pair automatically.":"Choose a device below.");
         }
+        void RenderDdpm(DellServiceStatus status) {
+            bool error=status.BlocksDell || status.State==DellServiceState.Unknown;
+            ddpmBorder.SetResourceReference(Border.BackgroundProperty,error?"DangerSoft":"SuccessSoft");
+            ddpmTitle.SetResourceReference(TextBlock.ForegroundProperty,error?"Danger":"Success");
+            ddpmGlyph.SetResourceReference(TextBlock.ForegroundProperty,error?"Danger":"Success");
+            ddpmGlyph.Text=error?"!":"✓";ddpmTitle.Text=status.Title;ddpmDetail.Text=status.Detail;
+            ddpmDetail.Visibility=status.Detail.Length==0?Visibility.Collapsed:Visibility.Visible;
+        }
         async Task Refresh() {
             if(busy) return;string key=current==null?null:current.Receiver.Key;SetBusy(true,"Reading receiver…");StopWatcher();
-            try {await Reload(key);Notice(current==null?"No supported receiver found.":"Ready.",false);}
+            try {await Reload(key);Notice(current==null?"No accessible receiver found.":"Ready.",false);}
             catch(Exception ex) {Notice(ex.Message,true);} finally {SetBusy(false,"Ready");StartWatcher();}
         }
         async Task Reload(string key) {
-            var results=await Task.Run(()=>ReceiverOperations.Scan());
+            var inventory=await Task.Run(()=>ReceiverOperations.Inspect());var results=inventory.Receivers;RenderDdpm(inventory.DellService);
             foreach(var snapshot in results) foreach(var slot in snapshot.Slots) {
                 string id=snapshot.Receiver.Key+"/"+slot.Identity;DeviceSlot old;
                 if(telemetry.TryGetValue(id,out old)) slot.CopyTelemetry(old);telemetry[id]=slot;
@@ -221,8 +231,7 @@ namespace DongleDeck {
             AppContext.SetSwitch("Switch.System.Windows.DoNotScaleForDpiChanges",false);
             bool created;using(var mutex=new Mutex(true,"Local\\DongleDeck.Utility",out created)) {
                 if(!created) {MessageBox.Show("DongleDeck is already open.");return 1;}
-                if(!new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator)) {MessageBox.Show("Run DongleDeck as administrator so it can manage the Dell service.");return 1;}
-                AppLog.Raw("DongleDeck 0.5.1 started");
+                AppLog.Raw("DongleDeck 0.5.2 started · admin="+DellServiceStatus.IsAdministrator);
                 var app=new Application();app.DispatcherUnhandledException+=delegate(object sender,DispatcherUnhandledExceptionEventArgs e) {AppLog.Raw(e.Exception.ToString());MessageBox.Show(e.Exception.Message,"DongleDeck");e.Handled=true;};
                 new MainWindow().Show();return app.Run();
             }

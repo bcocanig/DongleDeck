@@ -7,9 +7,11 @@
 
 Pair keyboards and mice to USB wireless receivers.
 
-**[Download](https://github.com/bcocanig/DongleDeck/releases/latest)** — extract and run `DongleDeck.exe` as administrator. No installer or Dell/Logitech software needed.
+**[Download](https://github.com/bcocanig/DongleDeck/releases/latest)** — extract and run `DongleDeck.exe`. No installer or Dell/Logitech software needed.
 
 Windows 10/11 x64, .NET Framework 4.8+. All app resources are inside the EXE.
+
+Admin is only needed when Dell's DDPM service is running. The app shows its status; close DongleDeck and use **Run as administrator** for Dell receivers. Logitech remains available without elevation. The service is stopped temporarily and restored after each Dell operation.
 
 ## Features
 

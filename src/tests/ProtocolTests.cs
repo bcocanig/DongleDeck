@@ -66,6 +66,11 @@ namespace DongleDeck {
             Test("Idle status retains the exact seconds seen",delegate {var now=DateTime.UtcNow;var slot=new DeviceSlot {LastSeenUtc=now.AddSeconds(-7),LastInputUtc=now.AddSeconds(-7),ReportedOnline=true};Check(slot.ActivityAt(now)=="Seen 7s ago","Seen seconds incorrect");});
             Test("Disconnected device is labelled Inactive",delegate {var now=DateTime.UtcNow;var slot=new DeviceSlot {LastSeenUtc=now,LastInputUtc=now,ReportedOnline=false};Check(slot.ActivityAt(now)=="Inactive","Inactive label incorrect");});
             LogitechTests.Run(Test);
+            Test("Running DDPM blocks Dell for a standard user",delegate {var status=new DellServiceStatus {State=DellServiceState.Running};Check(status.BlocksDell && status.Detail.Contains("Run as administrator"),"Missing service conflict guidance");});
+            Test("No DDPM service needs no elevation",delegate {var status=new DellServiceStatus {State=DellServiceState.Missing};Check(!status.BlocksDell && status.Detail.Length==0,"Missing service blocks receiver access");});
+            Test("Stopped DDPM service needs no elevation",delegate {var status=new DellServiceStatus {State=DellServiceState.Stopped};Check(!status.BlocksDell && status.Detail.Length==0,"Stopped service blocks receiver access");});
+            Test("Admin launch can manage running DDPM",delegate {var status=new DellServiceStatus {State=DellServiceState.Running,Administrator=true};Check(!status.BlocksDell && status.Detail.Length==0,"Admin launch incorrectly blocked");});
+            Test("Unknown DDPM status cannot trigger a standard-user service stop",delegate {var status=new DellServiceStatus {State=DellServiceState.Unknown};Check(status.BlocksDell,"Unknown service status treated as stopped");});
             Console.WriteLine(passed+" protocol checks passed.");return 0;
         }
     }

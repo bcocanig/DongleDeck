@@ -53,7 +53,7 @@ namespace DongleDeck {
             refresh=Find<Button>("RefreshButton");clear=Find<Button>("ClearButton");pairButton=Find<Button>("PairButton");automatic=Find<CheckBox>("AutoPairCheck");
             operationProgress=Find<ProgressBar>("OperationProgress");
             scanState=Find<TextBlock>("ScanStateText");pairText=Find<TextBlock>("PairButtonText");pairGlyph=Find<TextBlock>("PairButtonGlyph");themeButton=Find<Button>("ThemeButton");
-            using(Stream icon=Assembly.GetExecutingAssembly().GetManifestResourceStream("DongleDeck.ico")) {var image=new BitmapImage();image.BeginInit();image.CacheOption=BitmapCacheOption.OnLoad;image.StreamSource=icon;image.EndInit();window.Icon=image;}
+            using(Stream icon=Assembly.GetExecutingAssembly().GetManifestResourceStream("DongleDeck.ico")) window.Icon=BitmapFrame.Create(icon,BitmapCreateOptions.PreservePixelFormat,BitmapCacheOption.OnLoad);
             ApplyTheme(Theme.Load(),false);
             themeButton.Click+=delegate {ApplyTheme(!Theme.IsDark,true);};
             deviceList.ItemsSource=rows;candidateList.ItemsSource=candidates;
@@ -222,7 +222,7 @@ namespace DongleDeck {
             bool created;using(var mutex=new Mutex(true,"Local\\DongleDeck.Utility",out created)) {
                 if(!created) {MessageBox.Show("DongleDeck is already open.");return 1;}
                 if(!new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator)) {MessageBox.Show("Run DongleDeck as administrator so it can manage the Dell service.");return 1;}
-                AppLog.Raw("DongleDeck 0.5.0 started");
+                AppLog.Raw("DongleDeck 0.5.1 started");
                 var app=new Application();app.DispatcherUnhandledException+=delegate(object sender,DispatcherUnhandledExceptionEventArgs e) {AppLog.Raw(e.Exception.ToString());MessageBox.Show(e.Exception.Message,"DongleDeck");e.Handled=true;};
                 new MainWindow().Show();return app.Run();
             }

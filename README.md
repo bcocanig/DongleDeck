@@ -7,7 +7,9 @@
 
 Pair and manage **Dell Universal**, **Logitech Unifying**, **Jabra Link** USB receivers, and **Windows Bluetooth** audio headsets from one portable Windows app — with built-in **Workstation Combo Locking** for IT support desks.
 
-Windows 10/11 x64. Built as a self-contained single-file `DongleDeck.exe` (no installer or vendor pairing suite required).
+**[Download latest release](https://github.com/4guilera/DongleDeckPrime/releases/latest)** — grab `DongleDeck.exe` (or the portable ZIP) and run. No installer, .NET runtime, or vendor pairing suite required.
+
+Windows 10/11 x64. Built as a self-contained single-file `DongleDeck.exe`.
 
 Admin is only needed when Dell's DDPM service is running. The app shows its status; close DongleDeck Prime and use **Run as administrator** for Dell receivers. Logitech, Jabra, and Windows Bluetooth remain available without elevation.
 

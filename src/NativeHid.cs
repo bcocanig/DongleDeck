@@ -8,12 +8,37 @@ using System.Text.RegularExpressions;
 using Microsoft.Win32.SafeHandles;
 
 namespace DongleDeck {
+    public enum ReceiverKind {
+        DellUniversal,
+        LogitechUnifying,
+        JabraBluetoothDongle,
+        JabraDectDongle,
+        WindowsBluetooth
+    }
     public sealed class ReceiverInfo {
+        public ReceiverKind Kind = ReceiverKind.DellUniversal;
         public string Key, ManagementPath, InputPath, UsbId, Revision, Label, PhysicalDeviceId;
-        public bool IsLogitech;
         public string LongInputPath;
         public int InputBytes=32,LongInputBytes,OutputBytes=32;
-        public override string ToString() { return Label; }
+        public int? MaxSlots = 6;
+        public bool IsLocked;
+        public string OwnerLabel;
+        public bool IsLogitech {
+            get { return Kind == ReceiverKind.LogitechUnifying; }
+            set { if(value) Kind = ReceiverKind.LogitechUnifying; }
+        }
+        public bool IsDell { get { return Kind == ReceiverKind.DellUniversal; } }
+        public bool IsJabraBluetooth { get { return Kind == ReceiverKind.JabraBluetoothDongle; } }
+        public bool IsJabraDect { get { return Kind == ReceiverKind.JabraDectDongle; } }
+        public bool IsJabra { get { return IsJabraBluetooth || IsJabraDect; } }
+        public bool IsWindowsBluetooth { get { return Kind == ReceiverKind.WindowsBluetooth; } }
+        public bool SupportsAutoPair { get { return IsDell || IsJabraBluetooth; } }
+        public bool SupportsConnect { get { return IsJabraBluetooth || IsWindowsBluetooth; } }
+        public string StableId { get { return !string.IsNullOrEmpty(PhysicalDeviceId) ? PhysicalDeviceId : (Key ?? ""); } }
+        public string DisplayOwner { get { return string.IsNullOrWhiteSpace(OwnerLabel) ? "My Workstation" : OwnerLabel.Trim(); } }
+        public override string ToString() {
+            return IsLocked ? "\uD83D\uDD12 [" + DisplayOwner + "] " + Label : Label;
+        }
     }
     internal sealed class HidCollection {
         internal string Path, Key, UsbId, Revision;

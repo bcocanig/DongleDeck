@@ -13,6 +13,7 @@ namespace DongleDeck {
         readonly FileStream stream;
         readonly LogitechLink logitech;
         public ReceiverWatcher(ReceiverInfo receiver,Action<DeviceSignal> onSignal) {
+            if(receiver.IsJabra || receiver.IsWindowsBluetooth) return;
             if(receiver.IsLogitech) {
                 logitech=new LogitechLink(receiver);
                 Task.Run(async delegate {

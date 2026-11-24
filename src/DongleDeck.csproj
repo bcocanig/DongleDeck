@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>DongleDeck</AssemblyName>
+    <RootNamespace>DongleDeck</RootNamespace>
+    <StartupObject>DongleDeck.Program</StartupObject>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>assets\windows\DongleDeck.ico</ApplicationIcon>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultPageItems>false</EnableDefaultPageItems>
+    <EnableDefaultApplicationDefinition>false</EnableDefaultApplicationDefinition>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="*.cs" />
+    <EmbeddedResource Include="App.xaml" LogicalName="DongleDeck.App.xaml" />
+    <EmbeddedResource Include="assets\windows\DongleDeck.ico" LogicalName="DongleDeck.ico" />
+    <EmbeddedResource Include="assets\windows\icon-dark.png" LogicalName="DongleDeck.LogoDark.png" />
+    <EmbeddedResource Include="assets\windows\icon-light.png" LogicalName="DongleDeck.LogoLight.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Jabra.NET.Sdk" Version="4.10.2.2" />
+    <PackageReference Include="Jabra.NET.Sdk.DevicePairing" Version="3.2.0.2" />
+    <PackageReference Include="Jabra.DeviceConnector.Linux" Version="2.1.8" ExcludeAssets="all" PrivateAssets="all" />
+    <PackageReference Include="Jabra.DeviceConnector.Macos" Version="2.1.5" ExcludeAssets="all" PrivateAssets="all" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="8.0.1" />
+  </ItemGroup>
+
+  <Target Name="StripNonWindowsJabraConnectors" BeforeTargets="ComputeFilesToPublish;AssignTargetPaths">
+    <ItemGroup>
+      <Content Remove="@(Content)" Condition="$([System.String]::Copy('%(Identity)').Contains('DeviceConnector\darwin')) Or $([System.String]::Copy('%(Identity)').Contains('DeviceConnector/darwin')) Or $([System.String]::Copy('%(Identity)').Contains('DeviceConnector\linux')) Or $([System.String]::Copy('%(Identity)').Contains('DeviceConnector/linux'))" />
+      <None Remove="@(None)" Condition="$([System.String]::Copy('%(Identity)').Contains('DeviceConnector\darwin')) Or $([System.String]::Copy('%(Identity)').Contains('DeviceConnector/darwin')) Or $([System.String]::Copy('%(Identity)').Contains('DeviceConnector\linux')) Or $([System.String]::Copy('%(Identity)').Contains('DeviceConnector/linux'))" />
+    </ItemGroup>
+  </Target>
+</Project>
